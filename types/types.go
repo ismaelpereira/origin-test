@@ -18,6 +18,13 @@ type Vehicle struct {
 	Year int
 }
 
+type SurveyResults struct {
+	Vehicle    int
+	Disability int
+	Home       int
+	Life       int
+}
+
 type Assignment struct {
 	Vehicle    string `json:"auto"`
 	Disability string
