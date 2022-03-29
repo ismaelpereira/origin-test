@@ -2,48 +2,33 @@ package controller
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"origin-challenge/types"
-	"os"
 	"time"
 )
 
 type insuranceParser struct {
-	path string
 }
 
 type InsuranceParser interface {
-	UnmarshallSurvey() (*types.Survey, error)
+	UnmarshallSurvey(jsonSurvey []byte) (*types.Survey, error)
 	MarshallAssignment(a *types.Assignment) ([]byte, error)
 	ParseSurvey(survey *types.Survey) (*types.SurveyResults, error)
 	SetAssignmentResults(sr *types.SurveyResults) (*types.Assignment, error)
 }
 
-func NewInsuranceParser(path string) (InsuranceParser, error) {
-	return &insuranceParser{
-		path: path,
-	}, nil
+func NewInsuranceParser() (InsuranceParser, error) {
+	return &insuranceParser{}, nil
 }
 
-func (t *insuranceParser) UnmarshallSurvey() (*types.Survey, error) {
-	file, err := os.Open(t.path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	surveyFile, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
+func (t *insuranceParser) UnmarshallSurvey(jsonSurvey []byte) (*types.Survey, error) {
 	var surveyDecoded types.Survey
-	if err = json.Unmarshal(surveyFile, &surveyDecoded); err != nil {
+	if err := json.Unmarshal(jsonSurvey, &surveyDecoded); err != nil {
 		return nil, err
 	}
 	return &surveyDecoded, nil
 }
 
 func (t *insuranceParser) MarshallAssignment(a *types.Assignment) ([]byte, error) {
-
 	parsedAssignment, err := json.Marshal(a)
 	if err != nil {
 		return nil, err

@@ -1,11 +1,70 @@
-{
-    "age": 35,
-    "dependents": 2,
-    "house": {"ownership_status": "owned"},
-    "income": 0,
-    "marital_status": "married",
-    "risk_questions": [0, 1, 0],
-    "vehicle": {"year": 2018}
+[
+  {
+    "client": {
+      "age": 35,
+      "dependents": 2,
+      "house": { "ownership_status": "owned" },
+      "income": 0,
+      "marital_status": "married",
+      "risk_questions": [0, 1, 0],
+      "vehicle": { "year": 2018 }
+    },
+    "expected": {
+      "auto": "regular",
+      "disability": "ineligible",
+      "home": "economic",
+      "life": "regular"
+    }
+  },
+  {
+    "client": {
+      "age": 20,
+      "dependents": 0,
+      "house": { "ownership_status": "mortgaged" },
+      "income": 0,
+      "marital_status": "single",
+      "risk_questions": [1, 1, 0],
+      "vehicle": {}
+    },
+    "expected": {
+      "auto": "regular",
+      "disability": "ineligible",
+      "home": "economic",
+      "life": "regular"
+    }
+  },
+  {
+    "client": {
+      "age": 25,
+      "dependents": 0,
+      "house": {},
+      "income": 100000,
+      "marital_status": "married",
+      "risk_questions": [0, 0, 0],
+      "vehicle": {}
+    },
+    "expected": {
+      "auto": "regular",
+      "disability": "ineligible",
+      "home": "economic",
+      "life": "regular"
+    }
+  },
+  {
+    "client": {
+      "age": 32,
+      "dependents": 0,
+      "house": {},
+      "income": 200000,
+      "marital_status": "single",
+      "risk_questions": [1, 0, 1],
+      "vehicle": {}
+    },
+    "expected": {
+      "auto": "regular",
+      "disability": "ineligible",
+      "home": "economic",
+      "life": "regular"
+    }
   }
-
-
+]

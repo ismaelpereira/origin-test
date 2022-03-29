@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"origin-challenge/controller"
+	"origin-challenge/types"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 )
 
@@ -20,17 +22,23 @@ func ApiHandler() {
 }
 
 func handleSurvey(w http.ResponseWriter, rq *http.Request) {
-	insuranceParser, err := controller.NewInsuranceParser("./client.json")
+	insuranceParser, err := controller.NewInsuranceParser()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	survey, err := insuranceParser.UnmarshallSurvey()
+
+	var survey types.Survey
+
+	err = json.NewDecoder(rq.Body).Decode(&survey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	results, err := insuranceParser.ParseSurvey(survey)
+
+	spew.Dump(survey)
+
+	results, err := insuranceParser.ParseSurvey(&survey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
