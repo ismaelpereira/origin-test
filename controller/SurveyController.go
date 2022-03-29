@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"origin-challenge/types"
 	"os"
@@ -44,6 +43,7 @@ func (t *insuranceParser) UnmarshallSurvey() (*types.Survey, error) {
 }
 
 func (t *insuranceParser) MarshallAssignment(a *types.Assignment) ([]byte, error) {
+
 	parsedAssignment, err := json.Marshal(a)
 	if err != nil {
 		return nil, err
@@ -116,9 +116,6 @@ func (t *insuranceParser) ParseSurvey(s *types.Survey) (*types.SurveyResults, er
 		results.LifePoints += 1
 		results.DisabilityPoints -= 1
 	}
-
-	fmt.Println(time.Now().Year())
-	fmt.Println(time.Now().Year() - s.Vehicle.Year)
 
 	if s.Vehicle.Year-time.Now().Year() <= 5 {
 		results.VehiclePoints += 1

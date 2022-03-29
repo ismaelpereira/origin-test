@@ -27,7 +27,7 @@ type SurveyResults struct {
 
 type Assignment struct {
 	Vehicle    string `json:"auto"`
-	Disability string
-	Home       string
-	Life       string
+	Disability string `json:"disability"`
+	Home       string `json:"home"`
+	Life       string `json:"life"`
 }
