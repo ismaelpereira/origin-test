@@ -19,10 +19,10 @@ type Vehicle struct {
 }
 
 type SurveyResults struct {
-	Vehicle    int
-	Disability int
-	Home       int
-	Life       int
+	VehiclePoints    int
+	DisabilityPoints int
+	HomePoints       int
+	LifePoints       int
 }
 
 type Assignment struct {

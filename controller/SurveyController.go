@@ -2,59 +2,12 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"origin-challenge/types"
 	"os"
 	"time"
 )
-
-/**
-Ler um JSON >
-Calcular o risco para o seguro >
-Retornar um json com a sugestão do tipo de seguro >
-
-
-
-Linhas de seguro
-- carmotiva
-- Residencial
-- Invalidez
-- Vida
-
-Verificações
-
-
-if renda == 0 &&
-carmóvel == {} &&
-casa == 0 => invalidez = -1, carmovel = -1, casa = -1
-
-if idade > 60 => invalidez = -1, vida = -1
-
-if idade < 30 =>
-riskQuestionsLife, riskQuestionsHouse, riskQuestionsInvalidez, riskQuestionsCar = -2
-
-if idade > 30  && idade < 40 =>
-riskQuestionsLife, riskQuestionsHouse, riskQuestionsInvalidez, riskQuestionsCar = -2
-
-if renda >  200k =>
-riskQuestionsLife, riskQuestionsHouse, riskQuestionsInvalidez, riskQuestionsLife = -1
-
-if house == mortgaged => riskQuestionsHouse += 1 && riskQuestionsInvalidez += 1
-
-if dependents > 0 => riskQuestionsInvalidez += 1 && riskQuestionsLife += 1
-
-
-if married => riskQuestionsLife += 1 && riskQuestionsInvalidez -= 1
-
-if veihcle.year - thisYear => 5 risQuestionsCar += 1
-
-
-Resultados
- =< 0 - Economico
- 1 ou 2 - Regular
- >= 3 - Responsável
-
-*/
 
 type insuranceParser struct {
 	path string
@@ -62,9 +15,9 @@ type insuranceParser struct {
 
 type InsuranceParser interface {
 	UnmarshallSurvey() (*types.Survey, error)
-	MarshallAssignment(a types.Assignment) error
-	ParseSurvey(survey types.Survey) (*types.SurveyResults, error)
-	SetAssignmentResults(sr types.SurveyResults) (*types.Assignment, error)
+	MarshallAssignment(a *types.Assignment) ([]byte, error)
+	ParseSurvey(survey *types.Survey) (*types.SurveyResults, error)
+	SetAssignmentResults(sr *types.SurveyResults) (*types.Assignment, error)
 }
 
 func NewInsuranceParser(path string) (InsuranceParser, error) {
@@ -90,71 +43,154 @@ func (t *insuranceParser) UnmarshallSurvey() (*types.Survey, error) {
 	return &surveyDecoded, nil
 }
 
-func (t *insuranceParser) MarshallAssignment(a types.Assignment) error {
-
-	return nil
-}
-
-func (t *insuranceParser) ParseSurvey(s types.Survey) (*types.SurveyResults, error) {
-	var carRiskPoints, disabilityRiskPoints, homeRiskPoints, lifeRiskPoints *int
-
-	survey, err := t.UnmarshallSurvey()
-
+func (t *insuranceParser) MarshallAssignment(a *types.Assignment) ([]byte, error) {
+	parsedAssignment, err := json.Marshal(a)
 	if err != nil {
 		return nil, err
 	}
+	return parsedAssignment, nil
+}
 
-	if survey.Age > 60 {
-		carRiskPoints = nil
-		disabilityRiskPoints = nil
-		homeRiskPoints = nil
-	}
-
-	if survey.Age < 30 {
-		*carRiskPoints -= 2
-		*disabilityRiskPoints -= 2
-		*homeRiskPoints -= 2
-		*lifeRiskPoints -= 2
-	}
-
-	if survey.Age > 30 && survey.Age < 40 || survey.Income > 200000 {
-		*carRiskPoints -= 1
-		*disabilityRiskPoints -= 1
-		*homeRiskPoints -= 1
-		*lifeRiskPoints -= 1
-	}
-
-	if survey.House.OwnershipStatus == "mortgaged" || survey.Dependents > 0 {
-		*disabilityRiskPoints += 1
-		*homeRiskPoints += 1
-	}
-
-	if survey.Dependents > 0 {
-		*disabilityRiskPoints -= 1
-		*lifeRiskPoints -= 1
-	}
-
-	if survey.MaritialStatus == "married" {
-		*lifeRiskPoints += 1
-		*disabilityRiskPoints -= 1
-	}
-
-	if survey.Vehicle.Year-time.Now().Year() >= 5 {
-		*carRiskPoints += 1
-	}
-
+func (t *insuranceParser) ParseSurvey(s *types.Survey) (*types.SurveyResults, error) {
 	var results types.SurveyResults
+	var riskPoints int
 
-	results.Disability = *disabilityRiskPoints
-	results.Home = *homeRiskPoints
-	results.Life = *lifeRiskPoints
-	results.Vehicle = *carRiskPoints
+	for _, riskAnswers := range s.RiskQuestions {
+		riskPoints += riskAnswers
+	}
+
+	results.DisabilityPoints = riskPoints
+	results.HomePoints = riskPoints
+	results.LifePoints = riskPoints
+	results.VehiclePoints = riskPoints
+
+	if s.Income == 0 {
+		results.DisabilityPoints = 500
+	}
+
+	if s.Vehicle == (types.Vehicle{}) {
+		results.VehiclePoints = 500
+	}
+
+	if s.House == (types.House{}) {
+		results.HomePoints = 500
+	}
+
+	if s.Age > 60 {
+		results.DisabilityPoints = 500
+		results.LifePoints = 500
+	}
+
+	if s.Age < 30 {
+		results.VehiclePoints -= 2
+		results.DisabilityPoints -= 2
+		results.HomePoints -= 2
+		results.LifePoints -= 2
+	}
+
+	if s.Age >= 30 && s.Age <= 40 {
+		results.VehiclePoints -= 1
+		results.DisabilityPoints -= 1
+		results.HomePoints -= 1
+		results.LifePoints -= 1
+	}
+
+	if s.Income > 200000 {
+		results.VehiclePoints -= 1
+		results.DisabilityPoints -= 1
+		results.HomePoints -= 1
+		results.LifePoints -= 1
+	}
+
+	if s.House.OwnershipStatus == "mortgaged" {
+		results.HomePoints += 1
+		results.DisabilityPoints += 1
+	}
+
+	if s.Dependents > 0 {
+		results.DisabilityPoints += 1
+		results.LifePoints += 1
+	}
+
+	if s.MaritialStatus == "married" {
+		results.LifePoints += 1
+		results.DisabilityPoints -= 1
+	}
+
+	fmt.Println(time.Now().Year())
+	fmt.Println(time.Now().Year() - s.Vehicle.Year)
+
+	if s.Vehicle.Year-time.Now().Year() <= 5 {
+		results.VehiclePoints += 1
+	}
 
 	return &results, nil
 }
 
-func (t *insuranceParser) SetAssignmentResults(sr types.SurveyResults) (*types.Assignment, error) {
+func (t *insuranceParser) SetAssignmentResults(sr *types.SurveyResults) (*types.Assignment, error) {
 	var assignment types.Assignment
+
+	if sr.DisabilityPoints <= 0 {
+		assignment.Disability = "economic"
+	}
+
+	if sr.DisabilityPoints > 0 && sr.DisabilityPoints < 3 {
+		assignment.Disability = "regular"
+	}
+
+	if sr.DisabilityPoints >= 3 {
+		assignment.Disability = "responsible"
+	}
+
+	if sr.DisabilityPoints >= 400 {
+		assignment.Disability = "ineligible"
+	}
+
+	if sr.HomePoints <= 0 {
+		assignment.Home = "economic"
+	}
+
+	if sr.HomePoints > 0 && sr.HomePoints < 3 {
+		assignment.Home = "regular"
+	}
+
+	if sr.HomePoints >= 3 {
+		assignment.Home = "responsible"
+	}
+
+	if sr.HomePoints >= 400 {
+		assignment.Home = "ineligible"
+	}
+
+	if sr.LifePoints <= 0 {
+		assignment.Life = "economic"
+	}
+
+	if sr.LifePoints > 0 && sr.LifePoints < 3 {
+		assignment.Life = "regular"
+	}
+
+	if sr.LifePoints >= 3 {
+		assignment.Life = "responsible"
+	}
+	if sr.LifePoints >= 400 {
+		assignment.Life = "ineligible"
+	}
+
+	if sr.VehiclePoints <= 0 {
+		assignment.Vehicle = "economic"
+	}
+
+	if sr.VehiclePoints > 0 && sr.VehiclePoints < 3 {
+		assignment.Vehicle = "regular"
+	}
+
+	if sr.VehiclePoints >= 3 {
+		assignment.Vehicle = "responsible"
+	}
+	if sr.VehiclePoints >= 400 {
+		assignment.Vehicle = "ineligible"
+	}
 
 	return &assignment, nil
 }

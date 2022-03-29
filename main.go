@@ -22,11 +22,18 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	results, err := insuranceParser.ParseSurvey(*survey)
+	results, err := insuranceParser.ParseSurvey(survey)
 	if err != nil {
 		return err
 	}
-	assignements, err := insuranceParser.SetAssignmentResults(*results)
-	spew.Dump(assignements)
+	assignements, err := insuranceParser.SetAssignmentResults(results)
+	if err != nil {
+		return err
+	}
+	insuranceJson, err := insuranceParser.MarshallAssignment(assignements)
+	if err != nil {
+		return err
+	}
+	spew.Dump(insuranceJson)
 	return nil
 }
