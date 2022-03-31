@@ -12,7 +12,7 @@ import (
 func main() {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/survey", api.HandleSurvey).Methods("POST")
+	r.HandleFunc("/survey", api.HandleSurvey).Methods(http.MethodPost)
 
 	fmt.Println("app is listening on port 8080")
 	err := http.ListenAndServe(":8080", r)
