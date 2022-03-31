@@ -1,4 +1,4 @@
-module origin-challenge
+module github.com/ismaelpereira/origin-challenge
 
 go 1.17
 

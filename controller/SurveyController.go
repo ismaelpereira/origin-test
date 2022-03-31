@@ -2,30 +2,31 @@ package controller
 
 import (
 	"encoding/json"
-	"origin-challenge/types"
 	"time"
+
+	"github.com/ismaelpereira/origin-challenge/types"
 )
 
 type insuranceParser struct {
 }
 
 type InsuranceParser interface {
-	UnmarshallSurvey(jsonSurvey []byte) (*types.Survey, error)
+	UnmarshallSurvey(jsonSurvey []byte) (types.Survey, error)
 	MarshallAssignment(a *types.Assignment) ([]byte, error)
-	ParseSurvey(survey *types.Survey) (*types.SurveyResults, error)
-	SetAssignmentResults(sr *types.SurveyResults) (*types.Assignment, error)
+	ParseSurvey(survey *types.Survey) (types.SurveyResults, error)
+	SetAssignmentResults(sr *types.SurveyResults) (types.Assignment, error)
 }
 
 func NewInsuranceParser() (InsuranceParser, error) {
 	return &insuranceParser{}, nil
 }
 
-func (t *insuranceParser) UnmarshallSurvey(jsonSurvey []byte) (*types.Survey, error) {
+func (t *insuranceParser) UnmarshallSurvey(jsonSurvey []byte) (types.Survey, error) {
 	var surveyDecoded types.Survey
 	if err := json.Unmarshal(jsonSurvey, &surveyDecoded); err != nil {
-		return nil, err
+		return types.Survey{}, err
 	}
-	return &surveyDecoded, nil
+	return surveyDecoded, nil
 }
 
 func (t *insuranceParser) MarshallAssignment(a *types.Assignment) ([]byte, error) {
@@ -36,7 +37,7 @@ func (t *insuranceParser) MarshallAssignment(a *types.Assignment) ([]byte, error
 	return parsedAssignment, nil
 }
 
-func (t *insuranceParser) ParseSurvey(s *types.Survey) (*types.SurveyResults, error) {
+func (t *insuranceParser) ParseSurvey(s *types.Survey) (types.SurveyResults, error) {
 	var results types.SurveyResults
 	var riskPoints int
 
@@ -106,10 +107,10 @@ func (t *insuranceParser) ParseSurvey(s *types.Survey) (*types.SurveyResults, er
 		results.VehiclePoints += 1
 	}
 
-	return &results, nil
+	return results, nil
 }
 
-func (t *insuranceParser) SetAssignmentResults(sr *types.SurveyResults) (*types.Assignment, error) {
+func (t *insuranceParser) SetAssignmentResults(sr *types.SurveyResults) (types.Assignment, error) {
 	var assignment types.Assignment
 
 	if sr.DisabilityPoints <= 0 {
@@ -174,5 +175,5 @@ func (t *insuranceParser) SetAssignmentResults(sr *types.SurveyResults) (*types.
 		assignment.Vehicle = "ineligible"
 	}
 
-	return &assignment, nil
+	return assignment, nil
 }

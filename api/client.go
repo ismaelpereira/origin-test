@@ -2,30 +2,20 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"origin-challenge/controller"
-	"origin-challenge/types"
+	"os"
+
+	"github.com/ismaelpereira/origin-challenge/controller"
+	"github.com/ismaelpereira/origin-challenge/types"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/gorilla/mux"
 )
 
-func ApiHandler() {
-	r := mux.NewRouter()
-
-	r.HandleFunc("/survey", handleSurvey).Methods("POST")
-
-	fmt.Println("app is listening on port 8080")
-	http.ListenAndServe(":8080", r)
-
-}
-
-func handleSurvey(w http.ResponseWriter, rq *http.Request) {
+func HandleSurvey(w http.ResponseWriter, rq *http.Request) {
 	insuranceParser, err := controller.NewInsuranceParser()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		os.Exit(1)
 	}
 
 	var survey types.Survey
@@ -33,7 +23,7 @@ func handleSurvey(w http.ResponseWriter, rq *http.Request) {
 	err = json.NewDecoder(rq.Body).Decode(&survey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		os.Exit(1)
 	}
 
 	spew.Dump(survey)
@@ -41,14 +31,18 @@ func handleSurvey(w http.ResponseWriter, rq *http.Request) {
 	results, err := insuranceParser.ParseSurvey(&survey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		os.Exit(1)
 	}
-	assignements, err := insuranceParser.SetAssignmentResults(results)
+	assignements, err := insuranceParser.SetAssignmentResults(&results)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		os.Exit(1)
 	}
 
-	json.NewEncoder(w).Encode(assignements)
+	err = json.NewEncoder(w).Encode(assignements)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		os.Exit(1)
+	}
 
 }
