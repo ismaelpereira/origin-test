@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 
@@ -16,6 +17,7 @@ func HandleSurvey(w http.ResponseWriter, rq *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		os.Exit(1)
+		log.Fatalln("Error: ", err)
 	}
 
 	var survey types.Survey
@@ -33,11 +35,7 @@ func HandleSurvey(w http.ResponseWriter, rq *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		os.Exit(1)
 	}
-	assignements, err := insuranceParser.SetAssignmentResults(&results)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		os.Exit(1)
-	}
+	assignements := insuranceParser.SetAssignmentResults(&results)
 
 	err = json.NewEncoder(w).Encode(assignements)
 	if err != nil {
