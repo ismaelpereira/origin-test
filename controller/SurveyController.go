@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ismaelpereira/origin-challenge/types"
 )
 
@@ -46,103 +47,95 @@ func (t *insuranceParser) sumRiskQuestions(s *types.Survey) int {
 	return riskPoints
 }
 
-func (t *insuranceParser) verifyIneligibility(s *types.Survey) types.SurveyResults {
-	var results types.SurveyResults
-
+func (t *insuranceParser) verifyIneligibility(s *types.Survey, r types.SurveyResults) types.SurveyResults {
 	if s.Income == 0 {
-		results.DisabilityPoints = 500
+		r.DisabilityPoints = 500
 	}
 
 	if s.Vehicle == (types.Vehicle{}) {
-		results.VehiclePoints = 500
+		r.VehiclePoints = 500
 	}
 
 	if s.House == (types.House{}) {
-		results.HomePoints = 500
+		r.HomePoints = 500
 	}
 
 	if s.Age > 60 {
-		results.DisabilityPoints = 500
-		results.LifePoints = 500
+		r.DisabilityPoints = 500
+		r.LifePoints = 500
 	}
 
-	return results
+	return r
 }
 
-func (t *insuranceParser) checkAgePoints(s *types.Survey) types.SurveyResults {
-	var results types.SurveyResults
+func (t *insuranceParser) checkAgePoints(s *types.Survey, r types.SurveyResults) types.SurveyResults {
 
 	if s.Age < 30 {
-		results.VehiclePoints -= 2
-		results.DisabilityPoints -= 2
-		results.HomePoints -= 2
-		results.LifePoints -= 2
+		r.VehiclePoints -= 2
+		r.DisabilityPoints -= 2
+		r.HomePoints -= 2
+		r.LifePoints -= 2
 	}
 
 	if s.Age >= 30 && s.Age <= 40 {
-		results.VehiclePoints -= 1
-		results.DisabilityPoints -= 1
-		results.HomePoints -= 1
-		results.LifePoints -= 1
+		r.VehiclePoints -= 1
+		r.DisabilityPoints -= 1
+		r.HomePoints -= 1
+		r.LifePoints -= 1
 	}
 
-	return results
+	return r
 }
 
-func (t *insuranceParser) checkIncomePoints(s *types.Survey) types.SurveyResults {
-	var results types.SurveyResults
+func (t *insuranceParser) checkIncomePoints(s *types.Survey, r types.SurveyResults) types.SurveyResults {
 
 	if s.Income > 200000 {
-		results.VehiclePoints -= 1
-		results.DisabilityPoints -= 1
-		results.HomePoints -= 1
-		results.LifePoints -= 1
+		r.VehiclePoints -= 1
+		r.DisabilityPoints -= 1
+		r.HomePoints -= 1
+		r.LifePoints -= 1
 	}
 
-	return results
+	return r
 }
 
-func (t *insuranceParser) checkHomePoints(s *types.Survey) types.SurveyResults {
-	var results types.SurveyResults
+func (t *insuranceParser) checkHomePoints(s *types.Survey, r types.SurveyResults) types.SurveyResults {
 
 	if s.House.OwnershipStatus == "mortgaged" {
-		results.HomePoints += 1
-		results.DisabilityPoints += 1
+		r.HomePoints += 1
+		r.DisabilityPoints += 1
 	}
 
-	return results
+	return r
 }
 
-func (t *insuranceParser) checkDependents(s *types.Survey) types.SurveyResults {
-	var results types.SurveyResults
+func (t *insuranceParser) checkDependents(s *types.Survey, r types.SurveyResults) types.SurveyResults {
 
 	if s.Dependents > 0 {
-		results.DisabilityPoints += 1
-		results.LifePoints += 1
+		r.DisabilityPoints += 1
+		r.LifePoints += 1
 	}
 
-	return results
+	return r
 }
 
-func (t *insuranceParser) checkMaritialPoints(s *types.Survey) types.SurveyResults {
-	var results types.SurveyResults
+func (t *insuranceParser) checkMaritialPoints(s *types.Survey, r types.SurveyResults) types.SurveyResults {
 
 	if s.MaritialStatus == "married" {
-		results.LifePoints += 1
-		results.DisabilityPoints -= 1
+		r.LifePoints += 1
+		r.DisabilityPoints -= 1
 	}
 
-	return results
+	return r
 }
 
-func (t *insuranceParser) checkVehiclePoints(s *types.Survey) types.SurveyResults {
-	var results types.SurveyResults
+func (t *insuranceParser) checkVehiclePoints(s *types.Survey, r types.SurveyResults) types.SurveyResults {
 
 	if s.Vehicle.Year-time.Now().Year() <= 5 {
-		results.VehiclePoints += 1
+		r.VehiclePoints += 1
 	}
 
-	return results
+	return r
 }
 
 func (t *insuranceParser) ParseSurvey(s *types.Survey) (types.SurveyResults, error) {
@@ -155,18 +148,20 @@ func (t *insuranceParser) ParseSurvey(s *types.Survey) (types.SurveyResults, err
 	results.LifePoints = riskPoints
 	results.VehiclePoints = riskPoints
 
-	results = t.verifyIneligibility(s)
-	results = t.checkAgePoints(s)
-	results = t.checkIncomePoints(s)
-	results = t.checkHomePoints(s)
-	results = t.checkDependents(s)
-	results = t.checkMaritialPoints(s)
-	results = t.checkVehiclePoints(s)
+	spew.Dump(results)
+
+	results = t.verifyIneligibility(s, results)
+	results = t.checkAgePoints(s, results)
+	results = t.checkIncomePoints(s, results)
+	results = t.checkHomePoints(s, results)
+	results = t.checkDependents(s, results)
+	results = t.checkMaritialPoints(s, results)
+	results = t.checkVehiclePoints(s, results)
 
 	return results, nil
 }
 
-func (t *insuranceParser) setDisabilityStatus(sr *types.SurveyResults) types.Assignment {
+func (t *insuranceParser) setDisabilityStatus(sr *types.SurveyResults) string {
 	var assignment types.Assignment
 
 	if sr.DisabilityPoints <= 0 {
@@ -185,10 +180,10 @@ func (t *insuranceParser) setDisabilityStatus(sr *types.SurveyResults) types.Ass
 		assignment.Disability = "ineligible"
 	}
 
-	return assignment
+	return assignment.Disability
 }
 
-func (t *insuranceParser) setHomeStatus(sr *types.SurveyResults) types.Assignment {
+func (t *insuranceParser) setHomeStatus(sr *types.SurveyResults) string {
 	var assignment types.Assignment
 
 	if sr.HomePoints <= 0 {
@@ -207,10 +202,10 @@ func (t *insuranceParser) setHomeStatus(sr *types.SurveyResults) types.Assignmen
 		assignment.Home = "ineligible"
 	}
 
-	return assignment
+	return assignment.Home
 }
 
-func (t *insuranceParser) setLifeStatus(sr *types.SurveyResults) types.Assignment {
+func (t *insuranceParser) setLifeStatus(sr *types.SurveyResults) string {
 	var assignment types.Assignment
 
 	if sr.LifePoints <= 0 {
@@ -228,10 +223,10 @@ func (t *insuranceParser) setLifeStatus(sr *types.SurveyResults) types.Assignmen
 		assignment.Life = "ineligible"
 	}
 
-	return assignment
+	return assignment.Life
 }
 
-func (t *insuranceParser) setVehicleStatus(sr *types.SurveyResults) types.Assignment {
+func (t *insuranceParser) setVehicleStatus(sr *types.SurveyResults) string {
 	var assignment types.Assignment
 
 	if sr.VehiclePoints <= 0 {
@@ -249,15 +244,15 @@ func (t *insuranceParser) setVehicleStatus(sr *types.SurveyResults) types.Assign
 		assignment.Vehicle = "ineligible"
 	}
 
-	return assignment
+	return assignment.Vehicle
 }
 func (t *insuranceParser) SetAssignmentResults(sr *types.SurveyResults) types.Assignment {
 	var assignment types.Assignment
 
-	assignment = t.setDisabilityStatus(sr)
-	assignment = t.setHomeStatus(sr)
-	assignment = t.setLifeStatus(sr)
-	assignment = t.setVehicleStatus(sr)
+	assignment.Disability = t.setDisabilityStatus(sr)
+	assignment.Home = t.setHomeStatus(sr)
+	assignment.Life = t.setLifeStatus(sr)
+	assignment.Vehicle = t.setVehicleStatus(sr)
 
 	return assignment
 }
